@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="SortingChest" />
+	<DisplayName value="Sorting chest" />
+	<Description value="This server-side mod adds an automatic chest sorter that redistributes items from a marked container into nearby storage based on existing item types." />
+	<Author value="Johnson1893" />
+	<Version value="2.5.0.1" />
+	<Website value="" />
+</xml>

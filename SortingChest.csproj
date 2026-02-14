@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
+            Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <ProjectGuid>{F2D75AC7-35C7-461D-BEA3-B6A9607EA593}</ProjectGuid>
+        <OutputType>Library</OutputType>
+        <AppDesignerFolder>Properties</AppDesignerFolder>
+        <RootNamespace>SortingChest</RootNamespace>
+        <AssemblyName>SortingChest</AssemblyName>
+        <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
+        <FileAlignment>512</FileAlignment>
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>full</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>.</OutputPath>
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DebugType>pdbonly</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>.</OutputPath>
+        <DefineConstants>TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+    <ItemGroup>
+        <Reference Include="0Harmony">
+            <HintPath>..\0_TFP_Harmony\0Harmony.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Assembly-CSharp">
+            <HintPath>..\..\7DaysToDieServer_Data\Managed\Assembly-CSharp.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="LogLibrary">
+            <HintPath>..\..\7DaysToDieServer_Data\Managed\LogLibrary.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System"/>
+        <Reference Include="System.Core"/>
+        <Reference Include="System.Data"/>
+        <Reference Include="System.Xml"/>
+        <Reference Include="UnityEngine">
+            <HintPath>..\..\7DaysToDieServer_Data\Managed\UnityEngine.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.CoreModule">
+            <HintPath>..\..\7DaysToDieServer_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="GameManager_Patch.cs"/>
+        <Compile Include="Properties\AssemblyInfo.cs"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Content Include=".gitignore"/>
+        <Content Include="ModInfo.xml"/>
+        <Content Include="README.md"/>
+    </ItemGroup>
+    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+
+    <Target Name="ZipMod" AfterTargets="Build">
+        <PropertyGroup>
+            <ZipStageRoot>$(BaseIntermediateOutputPath)zip\</ZipStageRoot>
+            <ZipStageDir>$(ZipStageRoot)$(AssemblyName)\</ZipStageDir>
+            <ZipOutFile>$(OutputPath)$(AssemblyName).zip</ZipOutFile>
+        </PropertyGroup>
+
+        <RemoveDir Directories="$(ZipStageDir)"/>
+        <MakeDir Directories="$(ZipStageDir)"/>
+
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ZipStageDir)"/>
+        <Copy SourceFiles="$(TargetDir)$(AssemblyName).pdb" DestinationFolder="$(ZipStageDir)" Condition="Exists('$(TargetDir)$(AssemblyName).pdb')"/>
+        <Copy SourceFiles="ModInfo.xml" DestinationFolder="$(ZipStageDir)" Condition="Exists('ModInfo.xml')"/>
+        <Copy SourceFiles="README.md" DestinationFolder="$(ZipStageDir)" Condition="Exists('README.md')"/>
+
+        <ItemGroup>
+            <ConfigFiles Include="Config\**\*"/>
+        </ItemGroup>
+
+        <Copy SourceFiles="@(ConfigFiles)"
+              DestinationFolder="$(ZipStageDir)Config\%(RecursiveDir)"
+              SkipUnchangedFiles="true"
+              Condition="Exists('Config')"/>
+
+        <Delete Files="$(ZipOutFile)" Condition="Exists('$(ZipOutFile)')"/>
+
+        <ZipDirectory SourceDirectory="$(ZipStageRoot)" DestinationFile="$(ZipOutFile)"/>
+    </Target>
+</Project>
