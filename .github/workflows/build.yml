@@ -20,3 +20,4 @@ jobs:
           name: latest
           prerelease: true
           files: SortingChest.zip
+          make_latest: true
