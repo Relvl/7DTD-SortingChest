@@ -61,6 +61,7 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="GameManager_Patch.cs"/>
+        <Compile Include="ModApi.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
     <ItemGroup>
