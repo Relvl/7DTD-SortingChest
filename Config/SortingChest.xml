@@ -2,10 +2,10 @@
 <SortingChest.Config>
     <!-- Adds extra logging lines on work. -->
     <VerboseLogging>false</VerboseLogging>
-    
+
     <!-- Round radii to find chests/containers. Set -1 to scan around in 3x3 chunks. -->
     <MaxDistance>20.0</MaxDistance>
-    
+
     <!-- Name of the chest that will sort out it's items (case-insensitive). -->
     <ContainerName>[sort]</ContainerName>
 </SortingChest.Config>

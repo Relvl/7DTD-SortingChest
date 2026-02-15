@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using HarmonyLib;
-using UniLinq;
 
 namespace SortingChest;
 
@@ -11,8 +9,6 @@ namespace SortingChest;
 [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
 public static class GameManager_Patch
 {
-    public static readonly List<TileEntityType> AvailableTargetTypes = [TileEntityType.Loot, TileEntityType.SecureLoot, TileEntityType.SecureLootSigned, TileEntityType.Composite];
-
     [HarmonyPrefix]
     [HarmonyPatch(nameof(GameManager.TEUnlockServer))]
     public static void TEUnlockServer_Prefix(
@@ -35,195 +31,32 @@ public static class GameManager_Patch
                 // just... why!?
                 chest = GameManager.Instance.World.GetTileEntity(_blockPos);
                 foreach (var entry in GameManager.Instance.lockedTileEntities)
-                {
                     if (entry.Key is TileEntity te && entry.Key.ToWorldPos().Equals(_blockPos))
                     {
                         chest = te;
                         lockerId = entry.Value;
                     }
-                }
             }
             else
             {
                 foreach (var entry in GameManager.Instance.lockedTileEntities)
-                {
                     if (entry.Key.EntityId == _lootEntityId && entry.Key is TileEntity te)
                     {
                         chest = te;
                         lockerId = entry.Value;
                     }
-                }
             }
 
             if (lockerId == -1) return;
-            if (chest is not TileEntityComposite composite) return;
 
             if (!GameManager.Instance.World.Players.dict.TryGetValue(lockerId, out var player)) return;
-            var persPlayer = GameManager.Instance.persistentPlayers.GetPlayerDataFromEntityID(lockerId);
-            if (persPlayer == null) return;
 
-            var signable = composite.GetFeature<TEFeatureSignable>();
-            var storage = composite.GetFeature<TEFeatureStorage>();
-            if (storage == null) return;
-
-            // check for correct named storage
-            if (signable?.signText?.Text?.EqualsCaseInsensitive(Config.SortingChestTag) != true) return;
-
-            // check there is any items
-            if (!storage.items.Any(i => !i.IsEmpty())) return;
-            var stacksBeforeSorting = storage.items.Count(i => !i.IsEmpty());
-
-            var possibleTargets = new Dictionary<Vector3i, TileEntity>();
-            var chunkX = World.toChunkXZ(_blockPos.x);
-            var chunkZ = World.toChunkXZ(_blockPos.z);
-
-            var distance = Config.SortingDistance < 0 ? 0 : Math.Pow(Config.SortingDistance, 2);
-
-            for (var offX = -1; offX < 2; offX++)
-            for (var offZ = -1; offZ < 2; offZ++)
-            {
-                if (GameManager.Instance.World.GetChunkSync(chunkX + offX, chunkZ + offZ) is not Chunk chunk) continue;
-                if (Config.VerboseLogging) Log.Out($"[{Config.AssemblyName}] process chunk: {chunk}");
-                foreach (var entry in chunk.GetTileEntities().dict)
-                {
-                    var targetPos = chunk.ToWorldPos(entry.Key);
-
-                    // skip self
-                    if (targetPos.Equals(_blockPos))
-                    {
-                        if (Config.VerboseLogging) Log.Out($"[{Config.AssemblyName}] skip target at [{targetPos.x}, {targetPos.x}] - same as starter");
-                        continue;
-                    }
-
-                    // skip non-chest-like
-                    if (!AvailableTargetTypes.Contains(entry.Value.GetTileEntityType()))
-                    {
-                        if (Config.VerboseLogging) Log.Out($"[{Config.AssemblyName}] skip target at [{targetPos.x}, {targetPos.x}] - non available type ({entry.Value.GetTileEntityType()})");
-                        continue;
-                    }
-
-                    // skip another sorting chests
-                    if (entry.Value is TileEntityComposite targetComposite)
-                    {
-                        var targetSignable = targetComposite.GetFeature<TEFeatureSignable>();
-                        if (targetSignable?.signText?.Text?.EqualsCaseInsensitive(Config.SortingChestTag) == true)
-                        {
-                            if (Config.VerboseLogging) Log.Out($"[{Config.AssemblyName}] skip target at [{targetPos.x}, {targetPos.x}] - another sorting chest");
-                            continue;
-                        }
-                    }
-
-                    // don't push to untouched loot containers (in case of another mods that allows to claim loot containers)
-                    if (entry.Value is TileEntityLootContainer { bTouched: false })
-                    {
-                        if (Config.VerboseLogging) Log.Out($"[{Config.AssemblyName}] skip target at [{targetPos.x}, {targetPos.x}] - another loot container");
-                        continue;
-                    }
-
-                    if (entry.Value is TileEntitySecureLootContainer { bTouched: false })
-                    {
-                        if (Config.VerboseLogging) Log.Out($"[{Config.AssemblyName}] skip target at [{targetPos.x}, {targetPos.x}] - another secu loot container");
-                        continue;
-                    }
-
-                    // skip too far away
-                    if (distance > 0)
-                    {
-                        var distanceSq = (_blockPos.ToVector3() - targetPos).sqrMagnitude;
-                        if (distanceSq > distance)
-                        {
-                            if (Config.VerboseLogging) Log.Out($"[{Config.AssemblyName}] skip target at [{targetPos.x}, {targetPos.x}] - too far away ({distanceSq})");
-                            continue;
-                        }
-                    }
-
-                    // skip opened by players
-                    var anotherLockerId = GameManager.Instance.GetEntityIDForLockedTileEntity(entry.Value);
-                    if (anotherLockerId != -1)
-                    {
-                        if (Config.VerboseLogging) Log.Out($"[{Config.AssemblyName}] skip target at [{targetPos.x}, {targetPos.x}] - locked by {anotherLockerId}");
-                        continue;
-                    }
-
-                    possibleTargets[targetPos] = entry.Value;
-                }
-            }
-
-            var sortedTargets = possibleTargets
-                .OrderBy(kv => (_blockPos.ToVector3() - kv.Key).sqrMagnitude)
-                .Select(kv => kv.Value)
-                .ToList();
-            if (Config.VerboseLogging) Log.Out($"[{Config.AssemblyName}] #sortedTargets: {sortedTargets.Count}");
-
-            var someMoved = false;
-            foreach (var target in sortedTargets)
-            {
-                if (!target.TryGetSelfOrFeature<ITileEntityLootable>(out var lootable)) continue;
-                if (lootable.IsUserAccessing()) continue;
-
-                var modified = false;
-                try
-                {
-                    lootable.SetUserAccessing(true);
-
-                    for (var i = 0; i < storage.items.Length; i++)
-                    {
-                        var stack = storage.items[i];
-
-                        if (stack.IsEmpty()) continue;
-                        if (!lootable.HasItem(stack.itemValue)) continue;
-
-                        if (lootable.TryStackItem(0, stack).allMoved)
-                        {
-                            modified = true;
-                            storage.UpdateSlot(i, ItemStack.Empty);
-                        }
-                        else if (lootable.AddItem(stack))
-                        {
-                            modified = true;
-                            storage.UpdateSlot(i, ItemStack.Empty);
-                        }
-                    }
-                }
-                finally
-                {
-                    if (modified)
-                    {
-                        lootable.SetModified();
-                        someMoved = true;
-                    }
-
-                    lootable.SetUserAccessing(false);
-                }
-            }
-
-            if (someMoved)
-                storage.SetModified();
-
-            var restStacks = storage.items.Count(i => !i.IsEmpty());
-            if (restStacks == stacksBeforeSorting)
-            {
-                var message = Localization.Get("sortingChestNothingSorted");
-                GameManager.Instance.ChatMessageServer(null, EChatType.Whisper, -1, message, [lockerId], EMessageSender.Server);
-            }
-            else if (restStacks > 0)
-            {
-                var sortedOut = stacksBeforeSorting - restStacks;
-                var message = Localization.Get("sortingChestPartialSorting");
-                message = string.Format(message, sortedOut, restStacks);
-                GameManager.Instance.ChatMessageServer(null, EChatType.Whisper, -1, message, [lockerId], EMessageSender.Server);
-            }
-            else
-            {
-                var message = Localization.Get("sortingChestCompleteSorting");
-                message = string.Format(message, stacksBeforeSorting);
-                GameManager.Instance.ChatMessageServer(null, EChatType.Whisper, -1, message, [lockerId], EMessageSender.Server);
-            }
+            SortingChestMod.DoSortingOut(chest, _blockPos, player);
         }
         catch (Exception e)
         {
             Log.Error($"[{Config.AssemblyName}] {e}");
-            Console.WriteLine(e); 
+            Console.WriteLine(e);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
@@ -13,6 +14,8 @@ public static class Config
     public static float SortingDistance { get; private set; } = 20f;
     public static string SortingChestTag { get; private set; } = "[sort]";
     public static bool VerboseLogging { get; private set; } = true;
+
+    public static readonly List<TileEntityType> AvailableTargetTypes = [TileEntityType.Loot, TileEntityType.SecureLoot, TileEntityType.SecureLootSigned, TileEntityType.Composite];
 
     public static void Load()
     {
