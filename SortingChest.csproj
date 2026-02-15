@@ -60,13 +60,15 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Config.cs" />
         <Compile Include="GameManager_Patch.cs"/>
-        <Compile Include="ModApi.cs" />
+        <Compile Include="SortingChestMod.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
     <ItemGroup>
         <Content Include=".github\workflows\build.yml" />
         <Content Include=".gitignore"/>
+        <Content Include="Config\SortingChest.xml" />
         <Content Include="ModInfo.xml"/>
         <Content Include="README.md"/>
     </ItemGroup>
