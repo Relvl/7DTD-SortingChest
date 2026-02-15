@@ -1,0 +1,4 @@
+Key,English,russian
+sortingChestNothingSorted,[00ff00]Nothing sorted out,[00ff00]Ничего не отсортировано
+sortingChestPartialSorting,[00ff00]Sorted out {0} stack(s) ({1} left),[00ff00]Отсортировано {0} стэк(ов) ({1} остался)
+sortingChestCompleteSorting,[00ff00]All {0} stack(s) are sorted out,[00ff00]Все {0} стэк(ов) отсортированы

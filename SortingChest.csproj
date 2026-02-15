@@ -68,6 +68,7 @@
     <ItemGroup>
         <Content Include=".github\workflows\build.yml" />
         <Content Include=".gitignore"/>
+        <Content Include="Config\Localization.txt" />
         <Content Include="Config\SortingChest.xml" />
         <Content Include="ModInfo.xml"/>
         <Content Include="README.md"/>

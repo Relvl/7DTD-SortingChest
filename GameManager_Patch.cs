@@ -203,22 +203,27 @@ public static class GameManager_Patch
             var restStacks = storage.items.Count(i => !i.IsEmpty());
             if (restStacks == stacksBeforeSorting)
             {
-                GameManager.Instance.ChatMessageServer(null, EChatType.Whisper, -1, "[00ff00]Nothing sorted out", [lockerId], EMessageSender.Server);
+                var message = Localization.Get("sortingChestNothingSorted");
+                GameManager.Instance.ChatMessageServer(null, EChatType.Whisper, -1, message, [lockerId], EMessageSender.Server);
             }
             else if (restStacks > 0)
             {
                 var sortedOut = stacksBeforeSorting - restStacks;
-                GameManager.Instance.ChatMessageServer(null, EChatType.Whisper, -1, $"[00ff00]Sorted out {sortedOut} stack(s) ({restStacks} left)", [lockerId], EMessageSender.Server);
+                var message = Localization.Get("sortingChestPartialSorting");
+                message = string.Format(message, sortedOut, restStacks);
+                GameManager.Instance.ChatMessageServer(null, EChatType.Whisper, -1, message, [lockerId], EMessageSender.Server);
             }
             else
             {
-                GameManager.Instance.ChatMessageServer(null, EChatType.Whisper, -1, $"[00ff00]All {stacksBeforeSorting} stack(s) is sorted out", [lockerId], EMessageSender.Server);
+                var message = Localization.Get("sortingChestCompleteSorting");
+                message = string.Format(message, stacksBeforeSorting);
+                GameManager.Instance.ChatMessageServer(null, EChatType.Whisper, -1, message, [lockerId], EMessageSender.Server);
             }
         }
         catch (Exception e)
         {
             Log.Error($"[{Config.AssemblyName}] {e}");
-            Console.WriteLine(e);
+            Console.WriteLine(e); 
         }
     }
 }
